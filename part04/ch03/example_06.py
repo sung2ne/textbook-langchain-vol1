@@ -1,9 +1,9 @@
 from langchain_core.runnables import RunnableLambda
 
-def conditional_step(inputs):
-    # 긴 텍스트만 요약
-    if len(inputs["text"]) > 1000:
-        return summarize_chain.invoke(inputs)
-    return inputs["text"]
+def safe_process(inputs):
+    try:
+        return risky_chain.invoke(inputs)
+    except Exception as e:
+        return f"처리 중 오류 발생: {e}"
 
-chain = RunnableLambda(conditional_step)
+safe_chain = RunnableLambda(safe_process)

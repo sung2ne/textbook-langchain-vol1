@@ -1,52 +1,55 @@
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableBranch, RunnableLambda
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 
 llm = ChatOllama(model="llama4")
 
-# 코드 질문용 체인
-code_prompt = ChatPromptTemplate.from_messages([
-    ("system", "당신은 프로그래밍 전문가입니다. 코드 예시와 함께 설명해주세요."),
-    ("human", "{question}")
-])
-code_chain = code_prompt | llm | StrOutputParser()
+# 1단계: 질문 분류
+classifier_prompt = ChatPromptTemplate.from_template("""
+다음 질문의 유형을 분류해주세요.
 
-# 일반 질문용 체인
-general_prompt = ChatPromptTemplate.from_messages([
+질문: {question}
+
+유형 (code/math/general 중 하나만 답변):""")
+
+classifier_chain = classifier_prompt | llm | StrOutputParser()
+
+# 2단계: 유형별 체인 (위와 동일)
+code_chain = ChatPromptTemplate.from_messages([
+    ("system", "당신은 프로그래밍 전문가입니다."),
+    ("human", "{question}")
+]) | llm | StrOutputParser()
+
+math_chain = ChatPromptTemplate.from_messages([
+    ("system", "당신은 수학 선생님입니다."),
+    ("human", "{question}")
+]) | llm | StrOutputParser()
+
+general_chain = ChatPromptTemplate.from_messages([
     ("system", "당신은 친절한 어시스턴트입니다."),
     ("human", "{question}")
-])
-general_chain = general_prompt | llm | StrOutputParser()
+]) | llm | StrOutputParser()
 
-# 수학 질문용 체인
-math_prompt = ChatPromptTemplate.from_messages([
-    ("system", "당신은 수학 선생님입니다. 단계별로 풀이해주세요."),
-    ("human", "{question}")
-])
-math_chain = math_prompt | llm | StrOutputParser()
+# 라우터 함수
+def route_by_type(inputs):
+    question_type = inputs["type"].strip().lower()
+    question = inputs["question"]
 
-# 질문 분류 함수
-def is_code_question(inputs):
-    keywords = ["코드", "함수", "클래스", "python", "javascript", "프로그래밍"]
-    question = inputs["question"].lower()
-    return any(kw in question for kw in keywords)
+    if "code" in question_type:
+        return code_chain.invoke({"question": question})
+    elif "math" in question_type:
+        return math_chain.invoke({"question": question})
+    else:
+        return general_chain.invoke({"question": question})
 
-def is_math_question(inputs):
-    keywords = ["계산", "수학", "더하기", "빼기", "곱하기", "방정식", "+", "-", "*", "/"]
-    question = inputs["question"].lower()
-    return any(kw in question for kw in keywords)
-
-# 분기 체인
-router = RunnableBranch(
-    (is_code_question, code_chain),
-    (is_math_question, math_chain),
-    general_chain  # 기본
+# 전체 체인
+full_chain = (
+    RunnablePassthrough.assign(
+        type=classifier_chain
+    )
+    | RunnableLambda(route_by_type)
 )
 
-# 테스트
-print(router.invoke({"question": "Python에서 리스트 정렬하는 코드 알려줘"}))
-print("---")
-print(router.invoke({"question": "2 + 3 * 4는 얼마야?"}))
-print("---")
-print(router.invoke({"question": "오늘 날씨 어때?"}))
+result = full_chain.invoke({"question": "피보나치 수열 구현해줘"})
+print(result)
