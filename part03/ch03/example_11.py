@@ -7,3 +7,8 @@ review_template = ChatPromptTemplate.from_messages([
 - 보안
 - 모범 사례 준수"""),
     ("human", """언어: {language}
+
+{code}
+
+리뷰해주세요.""")
+])
