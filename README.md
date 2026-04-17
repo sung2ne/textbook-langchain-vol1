@@ -1,6 +1,6 @@
 # 소설처럼 읽는 LangChain과 생성형 AI 1권 - 실습 코드
 
-[위키독스 교재](https://wikidocs.net/book/18963)의 실습 코드 저장소입니다.
+[iBetter Books 교재](https://text.ibetter.kr/langchain-vol1)의 실습 코드 저장소입니다.
 
 Ollama와 LangChain으로 시작하는 생성형 AI 입문서로, 로컬 LLM 실행부터 체인 구성, 메모리, 웹 연동, 문서 처리까지 단계별로 학습합니다.
 
@@ -145,4 +145,4 @@ python example_01.py
 
 ## 라이선스
 
-이 저장소는 [소설처럼 읽는 LangChain과 생성형 AI 1권](https://wikidocs.net/book/18963) 교재의 실습 코드입니다.
+이 저장소는 [소설처럼 읽는 LangChain과 생성형 AI 1권](https://text.ibetter.kr/langchain-vol1) 교재의 실습 코드입니다.
